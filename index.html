@@ -1,0 +1,725 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#06000f">
+<title>K-Pop Vocal Analyzer</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Noto+Sans+KR:wght@400;700;900&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#06000f; --card:#120020; --card2:#0d001a;
+  --a1:#ff2d78; --a2:#bf00ff; --a3:#00e5ff;
+  --gold:#ffd700; --safe:#00e596;
+  --text:#f5eeff; --muted:#9080aa; --dim:#5a4a70;
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+html,body{min-height:100%;overscroll-behavior:none;}
+body{
+  background:var(--bg);color:var(--text);
+  font-family:'Inter',sans-serif;
+  font-size:16px;
+  min-height:100vh;overflow-x:hidden;
+  -webkit-font-smoothing:antialiased;
+}
+
+/* ANIMATED BG */
+body::before{
+  content:'';position:fixed;inset:0;z-index:0;pointer-events:none;
+  background:
+    radial-gradient(ellipse at 10% 10%,rgba(191,0,255,.18) 0%,transparent 50%),
+    radial-gradient(ellipse at 90% 90%,rgba(255,45,120,.15) 0%,transparent 50%),
+    radial-gradient(ellipse at 55% 0%,rgba(0,229,255,.1) 0%,transparent 40%);
+  animation:bgP 9s ease-in-out infinite alternate;
+}
+@keyframes bgP{from{opacity:.6}to{opacity:1}}
+
+/* STARS */
+body::after{
+  content:'';position:fixed;inset:0;z-index:0;pointer-events:none;
+  background-image:
+    radial-gradient(1px 1px at 20% 30%,rgba(255,255,255,.4) 0%,transparent 100%),
+    radial-gradient(1px 1px at 70% 15%,rgba(255,255,255,.3) 0%,transparent 100%),
+    radial-gradient(1px 1px at 40% 70%,rgba(255,255,255,.2) 0%,transparent 100%),
+    radial-gradient(1px 1px at 85% 50%,rgba(255,255,255,.3) 0%,transparent 100%),
+    radial-gradient(1px 1px at 55% 85%,rgba(255,255,255,.2) 0%,transparent 100%),
+    radial-gradient(1px 1px at 10% 60%,rgba(255,255,255,.25) 0%,transparent 100%),
+    radial-gradient(1px 1px at 95% 25%,rgba(255,255,255,.3) 0%,transparent 100%);
+}
+
+.page{position:relative;z-index:1;max-width:520px;margin:0 auto;padding:20px 16px max(50px,env(safe-area-inset-bottom));}
+
+/* ── HEADER ── */
+header{text-align:center;padding:30px 0 24px;position:relative;}
+.logo-kr{
+  font-family:'Bebas Neue',cursive;font-size:clamp(2.4rem,10vw,3.4rem);
+  letter-spacing:6px;line-height:1;
+  background:linear-gradient(135deg,var(--a1),var(--a2),var(--a3));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+  filter:drop-shadow(0 0 24px rgba(255,45,120,.6));
+}
+.logo-sub{
+  font-family:'Noto Sans KR',sans-serif;font-size:clamp(0.75rem,3.5vw,1rem);
+  color:var(--a3);letter-spacing:4px;margin-top:4px;font-weight:700;
+  text-shadow:0 0 12px rgba(0,229,255,.5);
+}
+.tagline{
+  font-size:clamp(0.7rem,3vw,0.85rem);color:var(--muted);
+  margin-top:8px;letter-spacing:1px;
+}
+
+/* ── DIVIDER ── */
+.divider{
+  height:1px;margin:4px 0 20px;
+  background:linear-gradient(90deg,transparent,var(--a2),var(--a1),var(--a3),transparent);
+  opacity:.4;
+}
+
+/* ── CARDS ── */
+.card{
+  background:linear-gradient(135deg,rgba(25,0,45,.9),rgba(15,0,30,.95));
+  border-radius:24px;padding:24px 20px;margin-bottom:18px;
+  border:1px solid rgba(191,0,255,.25);
+  box-shadow:0 8px 40px rgba(191,0,255,.08),inset 0 1px 0 rgba(255,255,255,.05);
+  position:relative;overflow:hidden;
+}
+.card::before{
+  content:'';position:absolute;top:-80%;left:-80%;width:260%;height:260%;
+  background:conic-gradient(from 0deg,transparent,rgba(191,0,255,.03),transparent 60%);
+  animation:rot 16s linear infinite;pointer-events:none;
+}
+@keyframes rot{to{transform:rotate(360deg)}}
+.card-blue{border-color:rgba(0,229,255,.2);}
+.card-gold{border-color:rgba(255,215,0,.2);}
+
+.s-title{
+  font-family:'Noto Sans KR',sans-serif;
+  font-size:clamp(0.8rem,3.5vw,1rem);letter-spacing:2px;
+  text-transform:uppercase;color:var(--a2);
+  margin-bottom:18px;position:relative;font-weight:700;
+}
+
+/* ── BIG MIC BUTTON ── */
+.mic-wrap{display:flex;justify-content:center;align-items:center;margin-bottom:22px;position:relative;}
+.mic-btn{
+  width:120px;height:120px;border-radius:50%;border:none;cursor:pointer;
+  background:linear-gradient(135deg,var(--a1),var(--a2));
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;
+  box-shadow:0 0 0 0 rgba(255,45,120,.5),0 8px 32px rgba(191,0,255,.4);
+  transition:all .3s;touch-action:manipulation;position:relative;z-index:1;
+}
+.mic-btn:active{transform:scale(.93);}
+.mic-btn.rec{
+  background:linear-gradient(135deg,#ff3a3a,var(--a1));
+  animation:pulse 1.5s ease infinite;
+}
+@keyframes pulse{
+  0%{box-shadow:0 0 0 0 rgba(255,45,120,.7),0 8px 32px rgba(191,0,255,.4);}
+  70%{box-shadow:0 0 0 30px rgba(255,45,120,0),0 8px 32px rgba(191,0,255,.4);}
+  100%{box-shadow:0 0 0 0 rgba(255,45,120,0),0 8px 32px rgba(191,0,255,.4);}
+}
+.mic-icon{font-size:2.6rem;line-height:1;}
+.mic-lbl{
+  font-family:'Noto Sans KR',sans-serif;
+  font-size:0.65rem;letter-spacing:2px;color:#fff;font-weight:700;
+}
+
+.stop-btn{
+  width:120px;height:120px;border-radius:50%;border:2px solid var(--a3);cursor:pointer;
+  background:rgba(0,229,255,.08);display:none;flex-direction:column;
+  align-items:center;justify-content:center;gap:6px;color:var(--a3);
+  font-family:'Noto Sans KR',sans-serif;font-size:0.7rem;letter-spacing:2px;font-weight:700;
+  transition:all .3s;touch-action:manipulation;
+  box-shadow:0 0 20px rgba(0,229,255,.2);
+}
+.stop-btn.show{display:flex;}
+.stop-btn:active{transform:scale(.93);background:rgba(0,229,255,.15);}
+.stop-icon{font-size:2rem;}
+
+.reset-btn{
+  position:absolute;top:50%;right:0;transform:translateY(-50%);
+  background:transparent;border:1px solid rgba(255,255,255,.15);border-radius:50px;
+  color:var(--muted);padding:12px 16px;
+  font-family:'Inter',sans-serif;font-size:0.75rem;cursor:pointer;
+  letter-spacing:1px;touch-action:manipulation;font-weight:600;
+}
+.reset-btn:active{background:rgba(255,255,255,.07);}
+
+/* ── REC indicator ── */
+.rec-ind{display:none;align-items:center;justify-content:center;gap:10px;margin-bottom:14px;}
+.rec-ind.show{display:flex;}
+.rec-dot{width:10px;height:10px;border-radius:50%;background:var(--a1);animation:blink 1s infinite;}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:0}}
+.rec-txt{font-size:0.85rem;color:var(--a1);letter-spacing:1px;font-weight:600;}
+
+/* ── METRICS ── */
+.metrics{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px;}
+.metric{
+  background:rgba(0,0,0,.35);border-radius:16px;padding:16px 8px;
+  border:1px solid rgba(255,255,255,.07);text-align:center;
+  transition:border-color .3s,box-shadow .3s;
+}
+.metric.active{border-color:rgba(255,45,120,.6);box-shadow:0 0 20px rgba(255,45,120,.25);}
+.m-lbl{
+  font-size:clamp(0.6rem,2.5vw,0.72rem);letter-spacing:2px;
+  color:var(--muted);margin-bottom:8px;text-transform:uppercase;font-weight:600;
+}
+.m-val{
+  font-family:'Bebas Neue',cursive;
+  font-size:clamp(1.6rem,6vw,2rem);
+  background:linear-gradient(135deg,#fff,var(--a3));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+  min-height:40px;display:flex;align-items:center;justify-content:center;
+}
+.m-hz{font-size:0.65rem;color:var(--dim);margin-top:3px;font-weight:600;}
+
+/* ── WAVEFORM ── */
+canvas#waveform{
+  width:100%;height:64px;border-radius:12px;display:block;
+  background:rgba(0,0,0,.3);border:1px solid rgba(255,255,255,.05);
+}
+
+/* ── RESULTS ── */
+.res-card{display:none;}
+.res-card.show{display:block;animation:fadeUp .5s ease;}
+@keyframes fadeUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+
+.v-badge{
+  display:inline-block;padding:10px 22px;border-radius:50px;
+  font-family:'Noto Sans KR',sans-serif;
+  font-size:clamp(0.8rem,3.5vw,0.95rem);letter-spacing:2px;text-transform:uppercase;
+  background:linear-gradient(135deg,var(--a2),var(--a1));
+  color:#fff;box-shadow:0 0 24px rgba(191,0,255,.5);margin-bottom:18px;font-weight:700;
+}
+
+.info-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:18px;}
+.ibox{background:rgba(0,0,0,.3);border-radius:14px;padding:16px 14px;}
+.ibox-lbl{
+  font-size:clamp(0.6rem,2.5vw,0.72rem);color:var(--muted);
+  letter-spacing:2px;margin-bottom:6px;text-transform:uppercase;font-weight:600;
+}
+.ibox-val{
+  font-family:'Noto Sans KR',sans-serif;
+  font-size:clamp(0.9rem,4vw,1.05rem);color:var(--text);font-weight:700;
+}
+
+/* Range bar */
+.rb-wrap{margin:6px 0 18px;}
+.rb-labels{
+  display:flex;justify-content:space-between;
+  font-size:clamp(0.7rem,3vw,0.85rem);color:var(--muted);margin-bottom:10px;font-weight:600;
+}
+.rb-bg{height:13px;border-radius:50px;background:rgba(255,255,255,.06);position:relative;overflow:visible;}
+.rb-fill{
+  height:100%;border-radius:50px;position:absolute;
+  background:linear-gradient(90deg,var(--a2),var(--a1),var(--a3));
+  box-shadow:0 0 12px rgba(255,45,120,.5);transition:all 1.2s ease;
+}
+.rb-mrk{position:absolute;top:-5px;width:5px;height:23px;border-radius:3px;transform:translateX(-50%);}
+.mrk-l{background:var(--a2);}
+.mrk-h{background:var(--a3);}
+
+/* Warning */
+.warn{border-radius:16px;padding:16px 18px;margin-bottom:16px;display:none;border-left:5px solid;animation:fadeUp .3s ease;}
+.warn.danger {background:rgba(255,45,45,.12); border-color:#ff4545;display:block;}
+.warn.caution{background:rgba(255,165,0,.12); border-color:orange; display:block;}
+.warn.safe   {background:rgba(0,229,150,.12); border-color:var(--safe);display:block;}
+.warn-ttl{
+  font-family:'Noto Sans KR',sans-serif;
+  font-size:clamp(0.78rem,3.5vw,0.9rem);letter-spacing:1px;font-weight:700;margin-bottom:8px;
+}
+.warn-txt{font-size:clamp(0.75rem,3vw,0.88rem);color:var(--muted);line-height:1.7;}
+
+/* ── SONG GUIDE ── */
+.guide-card{display:none;}
+.guide-card.show{display:block;animation:fadeUp .5s ease .1s both;}
+
+.guide-tabs{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;}
+.gtab{
+  padding:10px 16px;border-radius:50px;border:1px solid rgba(255,255,255,.12);
+  background:transparent;color:var(--muted);cursor:pointer;
+  font-family:'Inter',sans-serif;font-size:clamp(0.72rem,3vw,0.85rem);font-weight:600;
+  transition:all .25s;touch-action:manipulation;letter-spacing:.5px;
+}
+.gtab.active-low  {background:rgba(191,0,255,.2);border-color:var(--a2);color:var(--a2);}
+.gtab.active-mid  {background:rgba(255,215,0,.15);border-color:var(--gold);color:var(--gold);}
+.gtab.active-high {background:rgba(255,45,120,.2);border-color:var(--a1);color:var(--a1);}
+
+.guide-content{display:none;}
+.guide-content.show{display:block;animation:fadeUp .3s ease;}
+
+.guide-box{
+  border-radius:16px;padding:18px 16px;margin-bottom:14px;
+  border:1px solid;
+}
+.guide-box.low  {background:rgba(191,0,255,.08);border-color:rgba(191,0,255,.3);}
+.guide-box.mid  {background:rgba(255,215,0,.07); border-color:rgba(255,215,0,.3);}
+.guide-box.high {background:rgba(255,45,120,.08);border-color:rgba(255,45,120,.3);}
+
+.guide-head{
+  font-family:'Noto Sans KR',sans-serif;
+  font-size:clamp(0.9rem,4vw,1.05rem);font-weight:700;margin-bottom:10px;
+}
+.guide-head.low-c {color:var(--a2);}
+.guide-head.mid-c {color:var(--gold);}
+.guide-head.high-c{color:var(--a1);}
+
+.guide-text{font-size:clamp(0.78rem,3.2vw,0.9rem);color:var(--muted);line-height:1.75;margin-bottom:12px;}
+.guide-tags{display:flex;flex-wrap:wrap;gap:7px;}
+.gtag{
+  padding:6px 13px;border-radius:50px;font-size:clamp(0.65rem,2.8vw,0.78rem);font-weight:600;
+}
+.gtag.low-t {background:rgba(191,0,255,.2);color:var(--a2);border:1px solid rgba(191,0,255,.4);}
+.gtag.mid-t {background:rgba(255,215,0,.18);color:var(--gold);border:1px solid rgba(255,215,0,.4);}
+.gtag.high-t{background:rgba(255,45,120,.2);color:var(--a1);border:1px solid rgba(255,45,120,.4);}
+
+/* ── SONGS ── */
+.songs-card{display:none;}
+.songs-card.show{display:block;animation:fadeUp .5s ease .2s both;}
+.songs-list{display:grid;gap:11px;margin-top:14px;}
+.sc{
+  background:rgba(0,0,0,.3);border-radius:16px;padding:16px 16px;
+  border:1px solid rgba(255,255,255,.07);
+  display:flex;align-items:center;justify-content:space-between;gap:10px;
+  transition:border-color .25s,background .25s;
+}
+.sc:active{border-color:rgba(0,229,255,.35);background:rgba(0,229,255,.05);}
+.sc-name{
+  font-family:'Noto Sans KR',sans-serif;
+  font-size:clamp(0.88rem,4vw,1rem);font-weight:700;
+}
+.sc-meta{font-size:clamp(0.68rem,2.8vw,0.8rem);color:var(--muted);margin-top:3px;font-weight:600;}
+.sc-rng{font-size:clamp(0.62rem,2.5vw,0.74rem);color:var(--a3);margin-top:3px;letter-spacing:.5px;}
+.badge{padding:7px 13px;border-radius:50px;font-size:clamp(0.62rem,2.5vw,0.74rem);font-weight:700;white-space:nowrap;flex-shrink:0;}
+.badge.perfect{background:rgba(0,229,150,.18);color:var(--safe);border:1px solid var(--safe);}
+.badge.good   {background:rgba(255,215,0,.18); color:var(--gold);border:1px solid var(--gold);}
+.badge.ok     {background:rgba(255,45,120,.18);color:var(--a1); border:1px solid var(--a1);}
+
+/* ── iOS hint ── */
+.hint{text-align:center;color:var(--dim);font-size:0.72rem;letter-spacing:1px;padding:10px 0 4px;display:none;}
+.hint.show{display:block;}
+
+/* ── FOOTER ── */
+footer{text-align:center;padding:10px 0 4px;color:var(--dim);font-size:0.68rem;letter-spacing:2px;}
+</style>
+</head>
+<body>
+<div class="page">
+
+  <header>
+    <div class="logo-kr">K-POP VOCAL</div>
+    <div class="logo-sub">보컬 분석기 · ANALYZER</div>
+    <div class="tagline">Audition ke liye apni awaaz analyze karo 🎤</div>
+  </header>
+  <div class="divider"></div>
+
+  <!-- MIC CARD -->
+  <div class="card">
+    <div class="s-title">🎙️ Vocal Detection</div>
+    <div class="mic-wrap">
+      <button class="mic-btn" id="micBtn" onclick="startRec()">
+        <span class="mic-icon">🎙️</span>
+        <span class="mic-lbl">GAANA SHURU</span>
+      </button>
+      <button class="stop-btn" id="stopBtn" onclick="stopRec()">
+        <span class="stop-icon">⏹</span>
+        <span>ANALYZE</span>
+      </button>
+      <button class="reset-btn" onclick="resetAll()">↺ RESET</button>
+    </div>
+
+    <div class="rec-ind" id="recInd">
+      <div class="rec-dot"></div>
+      <span class="rec-txt">Low se High tak alag-alag notes gaao...</span>
+    </div>
+
+    <div class="metrics">
+      <div class="metric" id="mCur">
+        <div class="m-lbl">Current</div>
+        <div class="m-val" id="curN">—</div>
+        <div class="m-hz" id="curHz">—</div>
+      </div>
+      <div class="metric" id="mLow">
+        <div class="m-lbl">Lowest</div>
+        <div class="m-val" id="lowN">—</div>
+        <div class="m-hz" id="lowHz">—</div>
+      </div>
+      <div class="metric" id="mHigh">
+        <div class="m-lbl">Highest</div>
+        <div class="m-val" id="highN">—</div>
+        <div class="m-hz" id="highHz">—</div>
+      </div>
+    </div>
+    <canvas id="waveform"></canvas>
+  </div>
+
+  <!-- RESULTS CARD -->
+  <div class="card res-card" id="resCard">
+    <div class="s-title">📊 Aapki Vocal Analysis</div>
+    <div class="v-badge" id="vBadge">—</div>
+    <div class="info-grid">
+      <div class="ibox">
+        <div class="ibox-lbl">Range Span</div>
+        <div class="ibox-val" id="rSpan">—</div>
+      </div>
+      <div class="ibox">
+        <div class="ibox-lbl">Level</div>
+        <div class="ibox-val" id="rClass">—</div>
+      </div>
+    </div>
+    <div class="rb-wrap">
+      <div class="rb-labels"><span id="bLow">Low</span><span id="bHigh">High</span></div>
+      <div class="rb-bg">
+        <div class="rb-fill" id="rbFill"></div>
+        <div class="rb-mrk mrk-l" id="mL" style="left:0%"></div>
+        <div class="rb-mrk mrk-h" id="mH" style="left:100%"></div>
+      </div>
+    </div>
+    <div class="warn" id="warnBox">
+      <div class="warn-ttl" id="wTitle"></div>
+      <div class="warn-txt"  id="wText"></div>
+    </div>
+  </div>
+
+  <!-- SONG SELECTION GUIDE -->
+  <div class="card card-gold guide-card" id="guideCard">
+    <div class="s-title">🎵 Kaun Sa Song Choose Karein?</div>
+
+    <div class="guide-tabs">
+      <button class="gtab" id="tabLow"  onclick="showGuide('low')">🎵 Low Notes</button>
+      <button class="gtab" id="tabMid"  onclick="showGuide('mid')">🎶 Medium Notes</button>
+      <button class="gtab" id="tabHigh" onclick="showGuide('high')">🎸 High Notes</button>
+    </div>
+
+    <!-- LOW -->
+    <div class="guide-content" id="guideLow">
+      <div class="guide-box low">
+        <div class="guide-head low-c">🎵 Low Notes wale Songs</div>
+        <div class="guide-text">
+          <strong style="color:var(--a2)">Kyun choose karein?</strong><br>
+          Agar aapki awaaz naturally gehri (deep) hai — bass ya baritone range mein — toh low note songs aapke liye perfect hain. Inhe gaana comfortable hota hai aur aap apni asli awaaz ki khoobsurti dikha sakte ho.<br><br>
+          <strong style="color:var(--a2)">Kab avoid karein?</strong><br>
+          Soprano ya high tenor voice wale log low songs mein struggle kar sakte hain — awaaz kamzor ya hollow lagti hai.
+        </div>
+        <div class="guide-tags">
+          <span class="gtag low-t">✓ Bass voice</span>
+          <span class="gtag low-t">✓ Baritone voice</span>
+          <span class="gtag low-t">✓ Contralto</span>
+          <span class="gtag low-t">✓ Deep tone</span>
+          <span class="gtag low-t">✓ Beginner friendly</span>
+        </div>
+      </div>
+      <div style="background:rgba(0,0,0,.25);border-radius:14px;padding:14px 16px;font-size:clamp(0.76rem,3vw,0.88rem);color:var(--muted);line-height:1.7;">
+        💡 <strong style="color:var(--text)">Pro Tip:</strong> Low note songs mein emotional delivery zyada important hoti hai. Apni expression pe focus karo, technical difficulty kam hoti hai — audition mein judges ko impress karne ka aacha mauka!
+      </div>
+    </div>
+
+    <!-- MID -->
+    <div class="guide-content" id="guideMid">
+      <div class="guide-box mid">
+        <div class="guide-head mid-c">🎶 Medium Notes wale Songs</div>
+        <div class="guide-text">
+          <strong style="color:var(--gold)">Kyun choose karein?</strong><br>
+          Medium range songs <strong style="color:var(--text)">sabse safe choice</strong> hain audition ke liye! Yeh songs almost sabhi voice types ke liye comfortable hote hain. Agar aap apni exact range nahi jaante, toh medium range se shuruat karo.<br><br>
+          <strong style="color:var(--gold)">Best for:</strong><br>
+          Yeh range melody aur harmony dono ke liye ideal hai. Judges bhi is range mein aapki actual singing ability properly judge kar sakte hain bina extreme notes ke distraction ke.
+        </div>
+        <div class="guide-tags">
+          <span class="gtag mid-t">✓ Sabhi voice types</span>
+          <span class="gtag mid-t">✓ Audition safe choice</span>
+          <span class="gtag mid-t">✓ Mezzo-Soprano</span>
+          <span class="gtag mid-t">✓ Tenor</span>
+          <span class="gtag mid-t">✓ Most K-pop songs</span>
+        </div>
+      </div>
+      <div style="background:rgba(0,0,0,.25);border-radius:14px;padding:14px 16px;font-size:clamp(0.76rem,3vw,0.88rem);color:var(--muted);line-height:1.7;">
+        💡 <strong style="color:var(--text)">Pro Tip:</strong> BTS Dynamite, NewJeans Ditto jaise songs medium range mein hain. Yeh popular bhi hain aur technically manageable bhi — audition ke liye <strong style="color:var(--gold)">perfect combination!</strong>
+      </div>
+    </div>
+
+    <!-- HIGH -->
+    <div class="guide-content" id="guideHigh">
+      <div class="guide-box high">
+        <div class="guide-head high-c">🎸 High Notes wale Songs</div>
+        <div class="guide-text">
+          <strong style="color:var(--a1)">Kyun choose karein?</strong><br>
+          High note songs <strong style="color:var(--text)">impressive hote hain</strong> lekin bahut risky bhi! Agar aapki authentic highest note C5 ya usse upar hai, tabhi high note songs try karo. Galat high note audition mein sabse bura impression deta hai.<br><br>
+          <strong style="color:var(--a1)">Kab bilkul avoid karein?</strong><br>
+          Agar aap high note reach karne ke liye strain ya force kar rahe ho — AVOID karo. Strained high notes se vocal cord damage ho sakta hai aur judges ko bhi clearly pata chal jaata hai.
+        </div>
+        <div class="guide-tags">
+          <span class="gtag high-t">✓ Soprano only</span>
+          <span class="gtag high-t">✓ High tenor</span>
+          <span class="gtag high-t">✓ Well trained only</span>
+          <span class="gtag high-t">⚠️ Risk high</span>
+          <span class="gtag high-t">⚠️ Warm-up zaroori</span>
+        </div>
+      </div>
+      <div style="background:rgba(255,45,45,.08);border-radius:14px;padding:14px 16px;font-size:clamp(0.76rem,3vw,0.88rem);color:var(--muted);line-height:1.7;border:1px solid rgba(255,45,45,.2);">
+        ⚠️ <strong style="color:#ff6b6b">Warning:</strong> High note songs attempt karne se pehle <strong style="color:var(--text)">vocal warm-up zaroori hai</strong>. Thanda paani avoid karo, gungune paani se gargle karo. Bina warm-up ke high notes = vocal injury risk!
+      </div>
+    </div>
+  </div>
+
+  <!-- SONGS CARD -->
+  <div class="card card-blue songs-card" id="songsCard">
+    <div class="s-title">🎤 Aapke Liye Best Songs</div>
+    <div class="songs-list" id="songsList"></div>
+  </div>
+
+  <div class="hint" id="hint">📲 Share → "Add to Home Screen" karke install karo</div>
+
+  <footer>Made with 💜 for K-pop Auditions</footer>
+</div>
+
+<script>
+const NAMES=['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
+const SONGS=[
+  {name:'Dynamite',        artist:'BTS',        low:'C3', high:'Eb5',lHz:130.8,hHz:622.3,diff:'Beginner',type:'mid'},
+  {name:'Butter',          artist:'BTS',        low:'A2', high:'F#5',lHz:110,  hHz:740,  diff:'Advanced',type:'high'},
+  {name:'How You Like That',artist:'BLACKPINK', low:'A2', high:'C#5',lHz:110,  hHz:554.4,diff:'Intermediate',type:'mid'},
+  {name:'WHISTLE',         artist:'BLACKPINK',  low:'G2', high:'A4', lHz:98,   hHz:440,  diff:'Beginner',type:'low'},
+  {name:'Ditto',           artist:'NewJeans',   low:'C3', high:'A4', lHz:130.8,hHz:440,  diff:'Beginner',type:'low'},
+  {name:'Attention',       artist:'NewJeans',   low:'D3', high:'G4', lHz:146.8,hHz:392,  diff:'Beginner',type:'low'},
+  {name:'OMG',             artist:'NewJeans',   low:'B2', high:'Bb4',lHz:123.5,hHz:466.2,diff:'Beginner',type:'low'},
+  {name:'FANCY',           artist:'TWICE',      low:'A2', high:'B4', lHz:110,  hHz:493.9,diff:'Intermediate',type:'mid'},
+  {name:'Eleven',          artist:'IVE',        low:'Bb2',high:'D5', lHz:116.5,hHz:587.3,diff:'Intermediate',type:'mid'},
+  {name:'Love Dive',       artist:'IVE',        low:'A2', high:'C5', lHz:110,  hHz:523.3,diff:'Beginner',type:'mid'},
+  {name:'After LIKE',      artist:'IVE',        low:'Bb2',high:'Db5',lHz:116.5,hHz:554.4,diff:'Intermediate',type:'mid'},
+  {name:'Next Level',      artist:'aespa',      low:'G2', high:'F5', lHz:98,   hHz:698.5,diff:'Advanced',type:'high'},
+  {name:'Savage',          artist:'aespa',      low:'F#2',high:'G5', lHz:92.5, hHz:784,  diff:'Expert',type:'high'},
+  {name:'ANTIFRAGILE',     artist:'LE SSERAFIM',low:'G2', high:'D5', lHz:98,   hHz:587.3,diff:'Intermediate',type:'mid'},
+  {name:'Celebrity',       artist:'IU',         low:'D3', high:'G5', lHz:146.8,hHz:784,  diff:'Advanced',type:'high'},
+  {name:'Lilac',           artist:'IU',         low:'E3', high:'E5', lHz:164.8,hHz:659.3,diff:'Intermediate',type:'mid'},
+  {name:'Panorama',        artist:'ENHYPEN',    low:'D2', high:'A4', lHz:73.4, hHz:440,  diff:'Intermediate',type:'low'},
+  {name:"Rollin'",         artist:'Brave Girls',low:'F3', high:'F5', lHz:174.6,hHz:698.5,diff:'Intermediate',type:'high'},
+];
+
+function hz2n(f){
+  if(!f||f<55) return null;
+  const n=Math.round(12*Math.log2(f/440)+69);
+  return{name:NAMES[((n%12)+12)%12]+(Math.floor(n/12)-1),midi:n};
+}
+function voiceType(l,h){
+  const ln=hz2n(l),hn=hz2n(h);if(!ln||!hn) return 'Unknown';
+  const lm=ln.midi,hm=hn.midi;
+  if(lm<=48&&hm>=72) return 'Bass-Baritone Extended';
+  if(lm<=48) return 'Bass';
+  if(lm<=52&&hm>=69) return 'Baritone';
+  if(lm<=56&&hm>=71) return 'Tenor';
+  if(lm<=56) return 'Tenor (Lower)';
+  if(lm<=57&&hm>=74) return 'Contralto';
+  if(lm<=60&&hm>=77) return 'Mezzo-Soprano';
+  if(lm<=60) return 'Mezzo-Soprano';
+  return 'Soprano';
+}
+function rangeSpan(l,h){
+  if(!l||!h) return '—';
+  const s=Math.round(12*Math.log2(h/l));
+  const o=Math.floor(s/12),r=s%12;
+  return(o?o+' Octave'+(o>1?'s':'')+' ':'')+( r?(o?'+ ':'')+r+' Semitones':'< 1 Semitone');
+}
+function rangeClass(l,h){
+  if(!l||!h) return '—';
+  const s=Math.round(12*Math.log2(h/l));
+  if(s>=36) return '★★★ Professional';
+  if(s>=24) return '★★★ Excellent';
+  if(s>=18) return '★★ Good';
+  if(s>=12) return '★ Average';
+  return '◇ Limited';
+}
+function getWarn(hHz){
+  const n=hz2n(hHz);if(!n) return null;
+  if(n.midi>=84) return{lvl:'danger',t:'⚠️ DANGER — Extreme High Note!',
+    tx:`${n.name} whistle register mein hai! Bina proper training ke yeh note attempt mat karo — vocal cord damage ho sakta hai.`};
+  if(n.midi>=79) return{lvl:'caution',t:'⚡ CAUTION — Advanced High Note',
+    tx:`${n.name} advanced range mein hai (Eb5-Ab5). Hamesha 10-15 min warm-up karein pehle aur zyada repeat mat karo.`};
+  return{lvl:'safe',t:'✅ Safe Range — Achi Awaaz Hai!',
+    tx:'Aapki vocal range K-pop practice ke liye safe aur comfortable hai. Regular practice karo, hydrated raho!'};
+}
+function suggest(lHz,hHz){
+  if(!lHz||!hHz) return [];
+  const uL=hz2n(lHz).midi,uH=hz2n(hHz).midi;
+  return SONGS.map(s=>{
+    const sL=hz2n(s.lHz).midi,sH=hz2n(s.hHz).midi;
+    let match,score;
+    if(sH<=uH&&sL>=uL-5)        {match='perfect';score=100-Math.abs(sL-uL);}
+    else if(sH<=uH+3&&sL>=uL-8) {match='good';   score=80-Math.abs(sL-uL);}
+    else if(sH-uH<=6&&sL>=uL-10){match='ok';     score=60-Math.abs(sL-uL);}
+    else return null;
+    return{...s,match,score};
+  }).filter(Boolean).sort((a,b)=>b.score-a.score).slice(0,8);
+}
+
+// Auto suggest best guide tab
+function autoGuideTab(lHz,hHz){
+  if(!lHz||!hHz) return;
+  const uH=hz2n(hHz).midi;
+  if(uH>=79) showGuide('high');
+  else if(uH>=67) showGuide('mid');
+  else showGuide('low');
+}
+
+function showGuide(type){
+  ['low','mid','high'].forEach(t=>{
+    document.getElementById('guide'+t.charAt(0).toUpperCase()+t.slice(1)).classList.remove('show');
+    document.getElementById('tab'+t.charAt(0).toUpperCase()+t.slice(1)).className='gtab';
+  });
+  document.getElementById('guide'+type.charAt(0).toUpperCase()+type.slice(1)).classList.add('show');
+  document.getElementById('tab'+type.charAt(0).toUpperCase()+type.slice(1)).classList.add('active-'+type);
+}
+
+// AUDIO
+let actx,an,src,st,afr,loHz=Infinity,hiHz=0,pbuf=[],recording=false;
+const cvs=document.getElementById('waveform');
+const cx=cvs.getContext('2d');
+
+function autoC(buf,sr){
+  let sz=buf.length,rms=0;
+  for(let i=0;i<sz;i++) rms+=buf[i]*buf[i];
+  rms=Math.sqrt(rms/sz);if(rms<0.008) return -1;
+  let r1=0,r2=sz-1,th=0.2;
+  for(let i=0;i<sz/2;i++) if(Math.abs(buf[i])<th){r1=i;break;}
+  for(let i=1;i<sz/2;i++) if(Math.abs(buf[sz-i])<th){r2=sz-i;break;}
+  buf=buf.slice(r1,r2);sz=buf.length;
+  let c=new Array(sz).fill(0);
+  for(let i=0;i<sz;i++) for(let j=0;j<sz-i;j++) c[i]+=buf[j]*buf[j+i];
+  let d=0;while(c[d]>c[d+1])d++;
+  let mv=-1,mp=-1;
+  for(let i=d;i<sz;i++) if(c[i]>mv){mv=c[i];mp=i;}
+  let T=mp;
+  const x1=c[T-1],x2=c[T],x3=c[T+1],a=(x1+x3-2*x2)/2,b2=(x3-x1)/2;
+  if(a) T=T-b2/(2*a);
+  return sr/T;
+}
+
+async function startRec(){
+  try{
+    st=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:true}});
+    actx=new(window.AudioContext||window.webkitAudioContext)();
+    an=actx.createAnalyser();an.fftSize=4096;
+    src=actx.createMediaStreamSource(st);src.connect(an);
+    recording=true;loHz=Infinity;hiHz=0;pbuf=[];
+    document.getElementById('micBtn').classList.add('rec');
+    document.getElementById('micBtn').style.display='none';
+    document.getElementById('stopBtn').classList.add('show');
+    document.getElementById('recInd').classList.add('show');
+    document.getElementById('resCard').classList.remove('show');
+    document.getElementById('guideCard').classList.remove('show');
+    document.getElementById('songsCard').classList.remove('show');
+    loop();
+  }catch(e){
+    alert('Mic access nahi mila!\nSettings > Browser > Microphone = Allow karein, phir try karein.');
+  }
+}
+
+function loop(){
+  afr=requestAnimationFrame(loop);
+  const buf=new Float32Array(an.fftSize);
+  an.getFloatTimeDomainData(buf);
+  const W=cvs.offsetWidth||300,H=64,PR=Math.min(window.devicePixelRatio||1,2);
+  cvs.width=W*PR;cvs.height=H*PR;cx.scale(PR,PR);
+  cx.clearRect(0,0,W,H);
+  cx.fillStyle='rgba(0,0,0,.3)';cx.fillRect(0,0,W,H);
+  const g=cx.createLinearGradient(0,0,W,0);
+  g.addColorStop(0,'#bf00ff');g.addColorStop(.5,'#ff2d78');g.addColorStop(1,'#00e5ff');
+  cx.strokeStyle=g;cx.lineWidth=2;cx.beginPath();
+  const step=W/buf.length;
+  for(let i=0;i<buf.length;i++){
+    const x=i*step,y=(buf[i]*.5+.5)*H;
+    i===0?cx.moveTo(x,y):cx.lineTo(x,y);
+  }
+  cx.stroke();
+  const f=autoC(buf,actx.sampleRate);
+  const mc=document.getElementById('mCur');
+  if(f>60&&f<1400){
+    pbuf.push(f);if(pbuf.length>6)pbuf.shift();
+    const sf=pbuf.reduce((a,b)=>a+b)/pbuf.length;
+    const n=hz2n(sf);
+    if(n){
+      G('curN',n.name);G('curHz',Math.round(sf)+' Hz');mc.classList.add('active');
+      if(sf<loHz){loHz=sf;const ln=hz2n(loHz);G('lowN',ln.name);G('lowHz',Math.round(loHz)+' Hz');}
+      if(sf>hiHz){hiHz=sf;const hn=hz2n(hiHz);G('highN',hn.name);G('highHz',Math.round(hiHz)+' Hz');}
+    }
+  } else mc.classList.remove('active');
+}
+
+function stopRec(){
+  recording=false;cancelAnimationFrame(afr);
+  if(st) st.getTracks().forEach(t=>t.stop());
+  if(actx) actx.close();
+  document.getElementById('micBtn').classList.remove('rec');
+  document.getElementById('micBtn').style.display='';
+  document.getElementById('stopBtn').classList.remove('show');
+  document.getElementById('recInd').classList.remove('show');
+  G('curN','—');G('curHz','—');
+  if(loHz<Infinity&&hiHz>0) showResults();
+}
+
+function showResults(){
+  const lN=hz2n(loHz),hN=hz2n(hiHz);
+  G('vBadge',voiceType(loHz,hiHz));
+  G('rSpan',rangeSpan(loHz,hiHz));
+  G('rClass',rangeClass(loHz,hiHz));
+  G('bLow',lN.name);G('bHigh',hN.name);
+  const mn=36,mx=96;
+  const lp=((lN.midi-mn)/(mx-mn))*100;
+  const wp=Math.max(((hN.midi-lN.midi)/(mx-mn))*100,3);
+  const f=document.getElementById('rbFill');
+  f.style.left=lp+'%';f.style.width=wp+'%';
+  document.getElementById('mL').style.left=lp+'%';
+  document.getElementById('mH').style.left=(lp+wp)+'%';
+  const wb=document.getElementById('warnBox');wb.className='warn';
+  const w=getWarn(hiHz);
+  if(w){wb.classList.add(w.lvl);G('wTitle',w.t);G('wText',w.tx);}
+  document.getElementById('resCard').classList.add('show');
+
+  // Guide
+  document.getElementById('guideCard').classList.add('show');
+  autoGuideTab(loHz,hiHz);
+
+  // Songs
+  const songs=suggest(loHz,hiHz);
+  const list=document.getElementById('songsList');list.innerHTML='';
+  if(!songs.length){
+    list.innerHTML='<div style="color:var(--muted);font-size:.88rem;padding:10px 0">Aur notes gaao — range wider karein!</div>';
+  } else {
+    songs.forEach(s=>{
+      const bc=s.match==='perfect'?'perfect':s.match==='good'?'good':'ok';
+      const bl=s.match==='perfect'?'✓ Perfect':s.match==='good'?'↑ Good':'~ Challenging';
+      const typeLabel=s.type==='high'?'🎸 High Notes':s.type==='low'?'🎵 Low Notes':'🎶 Medium';
+      const d=document.createElement('div');d.className='sc';
+      d.innerHTML=`<div>
+        <div class="sc-name">${s.name}</div>
+        <div class="sc-meta">${s.artist} &bull; ${s.diff} &bull; ${typeLabel}</div>
+        <div class="sc-rng">Range: ${s.low} — ${s.high}</div>
+      </div><div class="badge ${bc}">${bl}</div>`;
+      list.appendChild(d);
+    });
+  }
+  document.getElementById('songsCard').classList.add('show');
+  setTimeout(()=>document.getElementById('resCard').scrollIntoView({behavior:'smooth',block:'start'}),120);
+}
+
+function resetAll(){
+  if(recording) stopRec();
+  loHz=Infinity;hiHz=0;pbuf=[];
+  ['curN','lowN','highN'].forEach(id=>G(id,'—'));
+  ['curHz','lowHz','highHz'].forEach(id=>G(id,'—'));
+  document.getElementById('resCard').classList.remove('show');
+  document.getElementById('guideCard').classList.remove('show');
+  document.getElementById('songsCard').classList.remove('show');
+  document.getElementById('mCur').classList.remove('active');
+  cx.clearRect(0,0,cvs.width,cvs.height);
+}
+
+function G(id,v){document.getElementById(id).textContent=v;}
+
+if(/iPad|iPhone|iPod/.test(navigator.userAgent)&&!window.navigator.standalone)
+  document.getElementById('hint').classList.add('show');
+</script>
+</body>
+</html>
