@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="K-Pop Vocal">
+<meta name="theme-color" content="#0a0010">
+<title>K-Pop Vocal Analyzer</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@400;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:#0a0010; --card:#1a0030;
+  --accent:#ff2d78; --accent2:#c800ff; --accent3:#00e5ff;
+  --gold:#ffd700; --text:#f0e6ff; --muted:#8a7fa0; --safe:#00e596;
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+html,body{height:100%;overscroll-behavior:none;}
+body{background:var(--bg);color:var(--text);font-family:'Space Mono',monospace;min-height:100vh;overflow-x:hidden;-webkit-font-smoothing:antialiased;}
+body::before{content:'';position:fixed;inset:0;z-index:0;pointer-events:none;
+  background:radial-gradient(ellipse at 15% 15%,rgba(200,0,255,.15) 0%,transparent 55%),
+             radial-gradient(ellipse at 85% 85%,rgba(255,45,120,.12) 0%,transparent 55%),
+             radial-gradient(ellipse at 60% 5%,rgba(0,229,255,.09) 0%,transparent 45%);
+  animation:bgP 8s ease-in-out infinite alternate;}
+@keyframes bgP{from{opacity:.7}to{opacity:1}}
+
+.page{position:relative;z-index:1;max-width:520px;margin:0 auto;padding:16px 14px max(40px,env(safe-area-inset-bottom));}
+
+/* HEADER */
+header{text-align:center;padding:24px 0 20px;}
+.logo{font-family:'Noto Serif KR',serif;font-size:clamp(1.55rem,7vw,2.3rem);font-weight:700;letter-spacing:2px;
+  background:linear-gradient(135deg,var(--accent),var(--accent2),var(--accent3));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+  filter:drop-shadow(0 0 18px rgba(255,45,120,.5));line-height:1.2;}
+.subtitle{color:var(--muted);font-size:clamp(.52rem,2.4vw,.66rem);letter-spacing:3px;margin-top:5px;text-transform:uppercase;}
+
+/* CARDS */
+.card{background:var(--card);border-radius:22px;padding:20px 16px;margin-bottom:16px;
+  border:1px solid rgba(200,0,255,.2);box-shadow:0 4px 32px rgba(200,0,255,.06);
+  position:relative;overflow:hidden;}
+.card::before{content:'';position:absolute;top:-60%;left:-60%;width:220%;height:220%;
+  background:conic-gradient(from 0deg,transparent,rgba(200,0,255,.04),transparent);
+  animation:rot 14s linear infinite;pointer-events:none;}
+@keyframes rot{to{transform:rotate(360deg)}}
+.card-songs{border-color:rgba(0,229,255,.2);}
+.s-title{font-size:clamp(.56rem,2.4vw,.66rem);letter-spacing:3px;text-transform:uppercase;
+  color:var(--accent2);margin-bottom:16px;position:relative;}
+
+/* BIG MIC BUTTON */
+.mic-wrap{display:flex;justify-content:center;align-items:center;margin-bottom:20px;position:relative;}
+.mic-btn{width:105px;height:105px;border-radius:50%;border:none;cursor:pointer;
+  background:linear-gradient(135deg,var(--accent),var(--accent2));
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;
+  box-shadow:0 0 0 0 rgba(255,45,120,.4);transition:all .3s;touch-action:manipulation;}
+.mic-btn:active{transform:scale(.94);}
+.mic-btn.rec{background:linear-gradient(135deg,#ff4545,var(--accent));animation:pulse 1.4s ease infinite;}
+@keyframes pulse{0%{box-shadow:0 0 0 0 rgba(255,45,120,.6)}70%{box-shadow:0 0 0 28px rgba(255,45,120,0)}100%{box-shadow:0 0 0 0 rgba(255,45,120,0)}}
+.mic-icon{font-size:2.2rem;line-height:1;}
+.mic-lbl{font-family:'Space Mono',monospace;font-size:.56rem;letter-spacing:2px;color:#fff;font-weight:700;}
+
+.stop-btn{width:105px;height:105px;border-radius:50%;border:2px solid var(--accent3);cursor:pointer;
+  background:rgba(0,229,255,.08);display:none;flex-direction:column;align-items:center;justify-content:center;
+  gap:5px;color:var(--accent3);font-family:'Space Mono',monospace;font-size:.6rem;letter-spacing:2px;
+  transition:all .3s;touch-action:manipulation;}
+.stop-btn.show{display:flex;}
+.stop-btn:active{transform:scale(.94);background:rgba(0,229,255,.15);}
+.stop-icon{font-size:1.8rem;}
+
+.reset-btn{position:absolute;top:50%;right:0;transform:translateY(-50%);
+  background:transparent;border:1px solid rgba(255,255,255,.12);border-radius:50px;
+  color:var(--muted);padding:10px 14px;font-family:'Space Mono',monospace;
+  font-size:.58rem;cursor:pointer;letter-spacing:1px;touch-action:manipulation;}
+.reset-btn:active{background:rgba(255,255,255,.05);}
+
+/* REC indicator */
+.rec-ind{display:none;align-items:center;justify-content:center;gap:8px;margin-bottom:12px;}
+.rec-ind.show{display:flex;}
+.rec-dot{width:9px;height:9px;border-radius:50%;background:var(--accent);animation:blink 1s infinite;}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:0}}
+.rec-txt{font-size:.6rem;color:var(--accent);letter-spacing:2px;}
+
+/* METRICS */
+.metrics{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin-bottom:14px;}
+.metric{background:rgba(0,0,0,.3);border-radius:13px;padding:13px 6px;
+  border:1px solid rgba(255,255,255,.06);text-align:center;transition:border-color .3s,box-shadow .3s;}
+.metric.active{border-color:rgba(255,45,120,.5);box-shadow:0 0 16px rgba(255,45,120,.3);}
+.m-lbl{font-size:clamp(.46rem,1.8vw,.56rem);letter-spacing:2px;color:var(--muted);margin-bottom:5px;text-transform:uppercase;}
+.m-val{font-size:clamp(1rem,4.5vw,1.4rem);font-weight:700;
+  background:linear-gradient(135deg,#fff,var(--accent3));-webkit-background-clip:text;-webkit-text-fill-color:transparent;
+  min-height:34px;display:flex;align-items:center;justify-content:center;}
+.m-hz{font-size:.5rem;color:var(--muted);margin-top:2px;}
+
+/* WAVEFORM */
+canvas#waveform{width:100%;height:56px;border-radius:10px;display:block;
+  background:rgba(0,0,0,.25);border:1px solid rgba(255,255,255,.04);}
+
+/* RESULTS */
+.res-card{display:none;}
+.res-card.show{display:block;animation:fadeUp .5s ease;}
+@keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+
+.v-badge{display:inline-block;padding:7px 16px;border-radius:50px;font-size:.7rem;letter-spacing:2px;
+  text-transform:uppercase;background:linear-gradient(135deg,var(--accent2),var(--accent));
+  color:#fff;box-shadow:0 0 20px rgba(200,0,255,.4);margin-bottom:14px;}
+.info-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:16px;}
+.ibox{background:rgba(0,0,0,.25);border-radius:12px;padding:13px 11px;}
+.ibox-lbl{font-size:.53rem;color:var(--muted);letter-spacing:2px;margin-bottom:4px;text-transform:uppercase;}
+.ibox-val{font-size:.88rem;color:var(--text);font-weight:700;}
+
+/* Range bar */
+.rb-wrap{margin:4px 0 16px;}
+.rb-labels{display:flex;justify-content:space-between;font-size:.6rem;color:var(--muted);margin-bottom:7px;}
+.rb-bg{height:11px;border-radius:50px;background:rgba(255,255,255,.05);position:relative;overflow:visible;}
+.rb-fill{height:100%;border-radius:50px;position:absolute;
+  background:linear-gradient(90deg,var(--accent2),var(--accent),var(--accent3));
+  box-shadow:0 0 10px rgba(255,45,120,.5);transition:all 1s ease;}
+.rb-mrk{position:absolute;top:-4px;width:4px;height:19px;border-radius:2px;transform:translateX(-50%);}
+.mrk-l{background:var(--accent2);}
+.mrk-h{background:var(--accent3);}
+
+/* Warning */
+.warn{border-radius:13px;padding:13px 15px;margin-bottom:14px;display:none;border-left:4px solid;animation:fadeUp .3s ease;}
+.warn.danger {background:rgba(255,45,45,.1); border-color:#ff4545;display:block;}
+.warn.caution{background:rgba(255,165,0,.1); border-color:orange;display:block;}
+.warn.safe   {background:rgba(0,229,150,.1); border-color:var(--safe);display:block;}
+.warn-ttl{font-size:.63rem;letter-spacing:2px;font-weight:700;margin-bottom:5px;text-transform:uppercase;}
+.warn-txt{font-size:.68rem;color:var(--muted);line-height:1.65;}
+
+/* Songs */
+.songs-card{display:none;}
+.songs-card.show{display:block;animation:fadeUp .5s ease .15s both;}
+.songs-list{display:grid;gap:9px;margin-top:12px;}
+.sc{background:rgba(0,0,0,.3);border-radius:13px;padding:13px 14px;
+  border:1px solid rgba(255,255,255,.06);display:flex;align-items:center;
+  justify-content:space-between;gap:9px;transition:border-color .25s,background .25s;}
+.sc:active{border-color:rgba(0,229,255,.3);background:rgba(0,229,255,.04);}
+.sc-name{font-size:clamp(.76rem,3.4vw,.88rem);font-weight:700;}
+.sc-meta{font-size:.6rem;color:var(--muted);margin-top:2px;}
+.sc-rng{font-size:.56rem;color:var(--accent3);margin-top:2px;letter-spacing:.5px;}
+.badge{padding:5px 10px;border-radius:50px;font-size:.58rem;font-weight:700;white-space:nowrap;flex-shrink:0;}
+.badge.perfect{background:rgba(0,229,150,.18);color:var(--safe);border:1px solid var(--safe);}
+.badge.good   {background:rgba(255,215,0,.18);color:var(--gold);border:1px solid var(--gold);}
+.badge.ok     {background:rgba(255,45,120,.18);color:var(--accent);border:1px solid var(--accent);}
+
+/* iOS install hint */
+.hint{text-align:center;color:var(--muted);font-size:.58rem;letter-spacing:2px;padding:8px 0 2px;display:none;}
+.hint.show{display:block;}
+</style>
+</head>
+<body>
+<div class="page">
+
+  <header>
+    <div class="logo">K-POP 보컬 분석기</div>
+    <div class="subtitle">Vocal Range Analyzer • Audition Ready</div>
+  </header>
+
+  <!-- MIC CARD -->
+  <div class="card">
+    <div class="s-title">🎤 Vocal Detection</div>
+    <div class="mic-wrap">
+      <button class="mic-btn" id="micBtn" onclick="startRec()">
+        <span class="mic-icon">🎙️</span>
+        <span class="mic-lbl">GAANA SHURU</span>
+      </button>
+      <button class="stop-btn" id="stopBtn" onclick="stopRec()">
+        <span class="stop-icon">⏹</span>
+        <span>ANALYZE</span>
+      </button>
+      <button class="reset-btn" onclick="resetAll()">↺ RESET</button>
+    </div>
+
+    <div class="rec-ind" id="recInd">
+      <div class="rec-dot"></div>
+      <span class="rec-txt">Low se High tak gaao...</span>
+    </div>
+
+    <div class="metrics">
+      <div class="metric" id="mCur">
+        <div class="m-lbl">Current</div>
+        <div class="m-val" id="curN">—</div>
+        <div class="m-hz" id="curHz">—</div>
+      </div>
+      <div class="metric" id="mLow">
+        <div class="m-lbl">Lowest</div>
+        <div class="m-val" id="lowN">—</div>
+        <div class="m-hz" id="lowHz">—</div>
+      </div>
+      <div class="metric" id="mHigh">
+        <div class="m-lbl">Highest</div>
+        <div class="m-val" id="highN">—</div>
+        <div class="m-hz" id="highHz">—</div>
+      </div>
+    </div>
+
+    <canvas id="waveform"></canvas>
+  </div>
+
+  <!-- RESULTS CARD -->
+  <div class="card res-card" id="resCard">
+    <div class="s-title">📊 Vocal Analysis</div>
+    <div class="v-badge" id="vBadge">—</div>
+    <div class="info-grid">
+      <div class="ibox"><div class="ibox-lbl">Range Span</div><div class="ibox-val" id="rSpan">—</div></div>
+      <div class="ibox"><div class="ibox-lbl">Level</div><div class="ibox-val" id="rClass">—</div></div>
+    </div>
+    <div class="rb-wrap">
+      <div class="rb-labels"><span id="bLow">Low</span><span id="bHigh">High</span></div>
+      <div class="rb-bg">
+        <div class="rb-fill" id="rbFill"></div>
+        <div class="rb-mrk mrk-l" id="mL" style="left:0%"></div>
+        <div class="rb-mrk mrk-h" id="mH" style="left:100%"></div>
+      </div>
+    </div>
+    <div class="warn" id="warnBox">
+      <div class="warn-ttl" id="wTitle"></div>
+      <div class="warn-txt" id="wText"></div>
+    </div>
+  </div>
+
+  <!-- SONGS CARD -->
+  <div class="card card-songs songs-card" id="songsCard">
+    <div class="s-title">🎵 Recommended K-Pop Songs</div>
+    <div class="songs-list" id="songsList"></div>
+  </div>
+
+  <div class="hint" id="hint">📲 Share → "Add to Home Screen" to install</div>
+</div>
+
+<script>
+const NAMES=['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
+const SONGS=[
+  {name:'Dynamite',      artist:'BTS',        low:'C3', high:'Eb5',lHz:130.8,hHz:622.3,diff:'Beginner'},
+  {name:'Butter',        artist:'BTS',        low:'A2', high:'F#5',lHz:110,  hHz:740,  diff:'Advanced'},
+  {name:'How You Like That',artist:'BLACKPINK',low:'A2',high:'C#5',lHz:110,  hHz:554.4,diff:'Intermediate'},
+  {name:'WHISTLE',       artist:'BLACKPINK',  low:'G2', high:'A4', lHz:98,   hHz:440,  diff:'Beginner'},
+  {name:'Ditto',         artist:'NewJeans',   low:'C3', high:'A4', lHz:130.8,hHz:440,  diff:'Beginner'},
+  {name:'Attention',     artist:'NewJeans',   low:'D3', high:'G4', lHz:146.8,hHz:392,  diff:'Beginner'},
+  {name:'OMG',           artist:'NewJeans',   low:'B2', high:'Bb4',lHz:123.5,hHz:466.2,diff:'Beginner'},
+  {name:'FANCY',         artist:'TWICE',      low:'A2', high:'B4', lHz:110,  hHz:493.9,diff:'Intermediate'},
+  {name:'Eleven',        artist:'IVE',        low:'Bb2',high:'D5', lHz:116.5,hHz:587.3,diff:'Intermediate'},
+  {name:'Love Dive',     artist:'IVE',        low:'A2', high:'C5', lHz:110,  hHz:523.3,diff:'Beginner'},
+  {name:'After LIKE',    artist:'IVE',        low:'Bb2',high:'Db5',lHz:116.5,hHz:554.4,diff:'Intermediate'},
+  {name:'Next Level',    artist:'aespa',      low:'G2', high:'F5', lHz:98,   hHz:698.5,diff:'Advanced'},
+  {name:'Savage',        artist:'aespa',      low:'F#2',high:'G5', lHz:92.5, hHz:784,  diff:'Expert'},
+  {name:'ANTIFRAGILE',   artist:'LE SSERAFIM',low:'G2', high:'D5', lHz:98,   hHz:587.3,diff:'Intermediate'},
+  {name:'Celebrity',     artist:'IU',         low:'D3', high:'G5', lHz:146.8,hHz:784,  diff:'Advanced'},
+  {name:'Lilac',         artist:'IU',         low:'E3', high:'E5', lHz:164.8,hHz:659.3,diff:'Intermediate'},
+  {name:'Panorama',      artist:'ENHYPEN',    low:'D2', high:'A4', lHz:73.4, hHz:440,  diff:'Intermediate'},
+  {name:"Rollin'",       artist:'Brave Girls',low:'F3', high:'F5', lHz:174.6,hHz:698.5,diff:'Intermediate'},
+];
+
+function hz2n(f){
+  if(!f||f<55) return null;
+  const n=Math.round(12*Math.log2(f/440)+69);
+  return {name:NAMES[((n%12)+12)%12]+(Math.floor(n/12)-1),midi:n};
+}
+function voiceType(l,h){
+  const ln=hz2n(l),hn=hz2n(h);
+  if(!ln||!hn) return 'Unknown';
+  const lm=ln.midi,hm=hn.midi;
+  if(lm<=48&&hm>=72) return 'Bass-Baritone Extended';
+  if(lm<=48) return 'Bass';
+  if(lm<=52&&hm>=69) return 'Baritone';
+  if(lm<=56&&hm>=71) return 'Tenor';
+  if(lm<=56) return 'Tenor (Lower)';
+  if(lm<=57&&hm>=74) return 'Contralto';
+  if(lm<=60&&hm>=77) return 'Mezzo-Soprano';
+  if(lm<=60) return 'Mezzo-Soprano';
+  return 'Soprano';
+}
+function rangeSpan(l,h){
+  if(!l||!h) return '—';
+  const s=Math.round(12*Math.log2(h/l));
+  const o=Math.floor(s/12),r=s%12;
+  return (o?o+' oct'+(o>1?'s':'')+' ':'')+( r?(o?'+ ':'')+r+' semitones':'< 1 semitone');
+}
+function rangeClass(l,h){
+  if(!l||!h) return '—';
+  const s=Math.round(12*Math.log2(h/l));
+  if(s>=36) return '★★★ Pro'; if(s>=24) return '★★★ Excellent';
+  if(s>=18) return '★★ Good'; if(s>=12) return '★ Average'; return '◇ Limited';
+}
+function getWarn(hHz){
+  const n=hz2n(hHz); if(!n) return null;
+  if(n.midi>=84) return{lvl:'danger', t:'⚠️ DANGER — Extreme High Note!',
+    tx:`${n.name} whistle register mein hai. Bina training ke vocal cord damage ho sakta hai!`};
+  if(n.midi>=79) return{lvl:'caution',t:'⚡ CAUTION — Advanced High Note',
+    tx:`${n.name} advanced range mein hai. Hamesha warm-up karein pehle.`};
+  return{lvl:'safe',t:'✅ Safe Range — Achi Awaaz!',
+    tx:'Aapki range K-pop practice ke liye safe hai. Hydrated raho aur regular practice karo!'};
+}
+function suggest(lHz,hHz){
+  if(!lHz||!hHz) return [];
+  const uL=hz2n(lHz).midi,uH=hz2n(hHz).midi;
+  return SONGS.map(s=>{
+    const sL=hz2n(s.lHz).midi,sH=hz2n(s.hHz).midi;
+    const lD=Math.abs(sL-uL),hD=sH-uH;
+    let match,score;
+    if(sH<=uH&&sL>=uL-5)       {match='perfect';score=100-lD;}
+    else if(sH<=uH+3&&sL>=uL-8){match='good';   score=80-lD;}
+    else if(hD<=6&&sL>=uL-10)  {match='ok';     score=60-lD;}
+    else return null;
+    return{...s,match,score};
+  }).filter(Boolean).sort((a,b)=>b.score-a.score).slice(0,7);
+}
+
+// AUDIO
+let actx,an,src,st,afr,loHz=Infinity,hiHz=0,pbuf=[],recording=false;
+const cvs=document.getElementById('waveform');
+const cx=cvs.getContext('2d');
+
+function autoC(buf,sr){
+  let sz=buf.length,rms=0;
+  for(let i=0;i<sz;i++) rms+=buf[i]*buf[i];
+  rms=Math.sqrt(rms/sz); if(rms<0.008) return -1;
+  let r1=0,r2=sz-1,th=0.2;
+  for(let i=0;i<sz/2;i++) if(Math.abs(buf[i])<th){r1=i;break;}
+  for(let i=1;i<sz/2;i++) if(Math.abs(buf[sz-i])<th){r2=sz-i;break;}
+  buf=buf.slice(r1,r2); sz=buf.length;
+  let c=new Array(sz).fill(0);
+  for(let i=0;i<sz;i++) for(let j=0;j<sz-i;j++) c[i]+=buf[j]*buf[j+i];
+  let d=0; while(c[d]>c[d+1])d++;
+  let mv=-1,mp=-1;
+  for(let i=d;i<sz;i++) if(c[i]>mv){mv=c[i];mp=i;}
+  let T=mp;
+  const x1=c[T-1],x2=c[T],x3=c[T+1],a=(x1+x3-2*x2)/2,b2=(x3-x1)/2;
+  if(a) T=T-b2/(2*a);
+  return sr/T;
+}
+
+async function startRec(){
+  try{
+    st=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:true}});
+    actx=new(window.AudioContext||window.webkitAudioContext)();
+    an=actx.createAnalyser(); an.fftSize=4096;
+    src=actx.createMediaStreamSource(st); src.connect(an);
+    recording=true; loHz=Infinity; hiHz=0; pbuf=[];
+    document.getElementById('micBtn').classList.add('rec');
+    document.getElementById('micBtn').style.display='none';
+    document.getElementById('stopBtn').classList.add('show');
+    document.getElementById('recInd').classList.add('show');
+    document.getElementById('resCard').classList.remove('show');
+    document.getElementById('songsCard').classList.remove('show');
+    loop();
+  }catch(e){
+    alert('Mic access nahi mila!\n\nPhone Settings > Browser > Microphone = Allow karein, phir dobara try karein.');
+  }
+}
+
+function loop(){
+  afr=requestAnimationFrame(loop);
+  const buf=new Float32Array(an.fftSize);
+  an.getFloatTimeDomainData(buf);
+
+  const W=cvs.offsetWidth||280,H=56,PR=Math.min(window.devicePixelRatio||1,2);
+  cvs.width=W*PR; cvs.height=H*PR; cx.scale(PR,PR);
+  cx.clearRect(0,0,W,H);
+  cx.fillStyle='rgba(0,0,0,.25)'; cx.fillRect(0,0,W,H);
+  const g=cx.createLinearGradient(0,0,W,0);
+  g.addColorStop(0,'#c800ff'); g.addColorStop(.5,'#ff2d78'); g.addColorStop(1,'#00e5ff');
+  cx.strokeStyle=g; cx.lineWidth=1.8; cx.beginPath();
+  const step=W/buf.length;
+  for(let i=0;i<buf.length;i++){
+    const x=i*step,y=(buf[i]*.5+.5)*H;
+    i===0?cx.moveTo(x,y):cx.lineTo(x,y);
+  }
+  cx.stroke();
+
+  const f=autoC(buf,actx.sampleRate);
+  const mc=document.getElementById('mCur');
+  if(f>60&&f<1400){
+    pbuf.push(f); if(pbuf.length>6) pbuf.shift();
+    const sf=pbuf.reduce((a,b)=>a+b)/pbuf.length;
+    const n=hz2n(sf);
+    if(n){
+      G('curN',n.name); G('curHz',Math.round(sf)+' Hz'); mc.classList.add('active');
+      if(sf<loHz){loHz=sf;const ln=hz2n(loHz);G('lowN',ln.name);G('lowHz',Math.round(loHz)+' Hz');}
+      if(sf>hiHz){hiHz=sf;const hn=hz2n(hiHz);G('highN',hn.name);G('highHz',Math.round(hiHz)+' Hz');}
+    }
+  } else mc.classList.remove('active');
+}
+
+function stopRec(){
+  recording=false; cancelAnimationFrame(afr);
+  if(st) st.getTracks().forEach(t=>t.stop());
+  if(actx) actx.close();
+  document.getElementById('micBtn').classList.remove('rec');
+  document.getElementById('micBtn').style.display='';
+  document.getElementById('stopBtn').classList.remove('show');
+  document.getElementById('recInd').classList.remove('show');
+  G('curN','—'); G('curHz','—');
+  if(loHz<Infinity&&hiHz>0) showResults();
+}
+
+function showResults(){
+  const lN=hz2n(loHz),hN=hz2n(hiHz);
+  G('vBadge',voiceType(loHz,hiHz));
+  G('rSpan',rangeSpan(loHz,hiHz));
+  G('rClass',rangeClass(loHz,hiHz));
+  G('bLow',lN.name); G('bHigh',hN.name);
+
+  const mn=36,mx=96;
+  const lp=((lN.midi-mn)/(mx-mn))*100;
+  const wp=Math.max(((hN.midi-lN.midi)/(mx-mn))*100,3);
+  const f=document.getElementById('rbFill');
+  f.style.left=lp+'%'; f.style.width=wp+'%';
+  document.getElementById('mL').style.left=lp+'%';
+  document.getElementById('mH').style.left=(lp+wp)+'%';
+
+  const wb=document.getElementById('warnBox'); wb.className='warn';
+  const w=getWarn(hiHz);
+  if(w){wb.classList.add(w.lvl);G('wTitle',w.t);G('wText',w.tx);}
+
+  document.getElementById('resCard').classList.add('show');
+
+  const songs=suggest(loHz,hiHz);
+  const list=document.getElementById('songsList'); list.innerHTML='';
+  if(!songs.length){
+    list.innerHTML='<div style="color:var(--muted);font-size:.78rem;padding:8px 0">Aur notes gaao — range wider karein!</div>';
+  } else {
+    songs.forEach(s=>{
+      const bc=s.match==='perfect'?'perfect':s.match==='good'?'good':'ok';
+      const bl=s.match==='perfect'?'✓ Perfect':s.match==='good'?'↑ Good':'~ Hard';
+      const d=document.createElement('div'); d.className='sc';
+      d.innerHTML=`<div><div class="sc-name">${s.name}</div>
+        <div class="sc-meta">${s.artist} &bull; ${s.diff}</div>
+        <div class="sc-rng">Range: ${s.low} — ${s.high}</div></div>
+        <div class="badge ${bc}">${bl}</div>`;
+      list.appendChild(d);
+    });
+  }
+  document.getElementById('songsCard').classList.add('show');
+  setTimeout(()=>document.getElementById('resCard').scrollIntoView({behavior:'smooth',block:'start'}),120);
+}
+
+function resetAll(){
+  if(recording) stopRec();
+  loHz=Infinity; hiHz=0; pbuf=[];
+  ['curN','lowN','highN'].forEach(id=>G(id,'—'));
+  ['curHz','lowHz','highHz'].forEach(id=>G(id,'—'));
+  document.getElementById('resCard').classList.remove('show');
+  document.getElementById('songsCard').classList.remove('show');
+  document.getElementById('mCur').classList.remove('active');
+  cx.clearRect(0,0,cvs.width,cvs.height);
+}
+
+function G(id,v){document.getElementById(id).textContent=v;}
+
+// iOS hint
+if(/iPad|iPhone|iPod/.test(navigator.userAgent)&&!window.navigator.standalone)
+  document.getElementById('hint').classList.add('show');
+</script>
+</body>
+</html>
